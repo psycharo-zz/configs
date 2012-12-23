@@ -1,0 +1,56 @@
+#!/usr/bin/env python
+
+import oauth2 as oauth
+import urlparse
+import os
+import subprocess
+
+# yeah anyone can use my app 
+APP_KEY = '7z43rcyc2dibwcp'
+APP_SECRET = 'hgcqe0wfle1s6hk'
+
+request_token_url = 'https://api.dropbox.com/1/oauth/request_token'
+access_token_url = 'https://api.dropbox.com/1/oauth/access_token'
+authorize_url = 'https://api.dropbox.com/1/oauth/authorize'
+share_url = 'https://api.dropbox.com/1/shares/sandbox/%s'
+
+
+FOLDER = os.path.expanduser('~') + os.path.sep + 'Dropbox/Apps/pyscrot/'
+
+CONFIG = os.path.expanduser('~') + os.path.sep + '.pyscrot'
+
+if not os.path.exists(CONFIG):
+
+    # requesting
+    consumer = oauth.Consumer(key=APP_KEY, secret=APP_SECRET)
+    client = oauth.Client(consumer)
+    resp, content = client.request(request_token_url, "POST")
+    request_token = dict(urlparse.parse_qsl(content))
+
+    # authorizing
+    os.execv('/usr/bin/xdg-open', ['', "%s?oauth_token=%s" % (authorize_url, request_token['oauth_token'])])
+    print 'Press Enter'
+    raw_input()
+
+    # accessing 
+    token = oauth.Token(request_token['oauth_token'], request_token['oauth_token_secret'])
+    client = oauth.Client(consumer, token)
+
+    resp, content = client.request(access_token_url, "POST")
+    access_token = dict(urlparse.parse_qsl(content))
+
+    open(CONFIG, 'w').write(str(access_token))
+else:
+    file_name = subprocess.check_output(["scrot", "-s", "-e", "mv '$f' %s; echo '$f'" % FOLDER])[:-1]
+
+    access_token = eval(open(CONFIG).read())
+    consumer = oauth.Consumer(key=APP_KEY, secret=APP_SECRET)
+    token = oauth.Token(access_token['oauth_token'], access_token['oauth_token_secret'])
+    client = oauth.Client(consumer, token)
+
+    # DIRTY hack, see how to upload file via oauth
+    while True:
+        resp, content = client.request(share_url % file_name, "GET")
+        content = dict(eval(content))
+        if 'url' in content:
+            os.execv('/usr/bin/xdg-open', ['', content['url']])
