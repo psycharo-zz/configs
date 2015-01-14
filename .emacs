@@ -12,6 +12,16 @@
 ;; helm config
 (global-set-key (kbd "C-x C-f") 'helm-find-files)
 (global-set-key (kbd "C-x b") 'helm-buffers-list)
+(global-set-key (kbd "C-x C-b") 'helm-buffers-list)
+
+(require 'helm-config)
+(helm-mode t)
+(helm-adaptative-mode t)
+(helm-autoresize-mode t)
+(setq helm-autoresize-max-height 30)
+(setq helm-autoresize-min-height 30)
+
+
 
 ;; ui
 (menu-bar-mode -1)
@@ -72,10 +82,7 @@
 
 ;; various small stuff
 (dolist (mode
-         '(ido-mode 
-           ido-everywhere 
-           flx-ido-mode
-	   column-number-mode
+         '(column-number-mode
 	   electric-pair-mode
 	   show-paren-mode)) 
   (funcall mode 1))
@@ -155,9 +162,6 @@
   ;; (irony-mode t)
   ;; (add-to-list 'ac-sources 'ac-source-irony)
   ;; (define-key irony-mode-map (kbd "M-RET") 'ac-complete-irony-async)
-
-  ;; projectile
-  (projectile-mode t)
 
   (setq c-default-style "ellemtel")
   (setq-default c-basic-offset 2)
