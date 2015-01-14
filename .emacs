@@ -1,156 +1,241 @@
-(package-initialize)
-(setq package-archives '(("gnu" . "http://elpa.gnu.org/packages/")
-                         ("marmalade" . "http://marmalade-repo.org/packages/")
-                         ("melpa" . "http://melpa.milkbox.net/packages/")))
-;; theme
-(setq inhibit-startup-message t)
+;; packages
+;; (package-initialize)
+;; (setq package-archives '(("gnu" . "http://elpa.gnu.org/packages/")
+;; 			 ("marmalade" . "http://marmalade-repo.org/packages/")
+;; 			 ("melpa" . "http://melpa.milkbox.net/packages/")))
+;; el-get
+(add-to-list 'load-path "~/.emacs.d/el-get/el-get/")
+(require 'el-get)
+(el-get 'sync)
+
+
+;; helm config
+(global-set-key (kbd "C-x C-f") 'helm-find-files)
+(global-set-key (kbd "C-x b") 'helm-buffers-list)
+
+;; ui
 (menu-bar-mode -1)
-
-;; (require 'smooth-scroll)
-;; (smooth-scroll-mode t)
-;; (setq auto-window-vscroll nil)
-(setq ring-bell-function 'ignore)
-
-;; nicer scrolling
-(setq scroll-step            1
-      scroll-conservatively  10000)
-
-(setq mouse-wheel-scroll-amount '(1 ((shift) . 1) ((control) . nil)))
-;;(setq mouse-wheel-progressive-speed nil)
-(setq-default cursor-type 'bar) 
-(blink-cursor-end)
+(tool-bar-mode -1)
+(setq inhibit-startup-message t
+      ring-bell-function 'ignore)
+(blink-cursor-mode 0)                          
+(setq-default cursor-type 'bar)
+(fset 'yes-or-no-p 'y-or-n-p)
 
 
-;; for gui mode
-(when window-system
-  (load-theme 'solarized-dark t)
-  (tool-bar-mode -1)
-  (scroll-bar-mode -1)
-  (set-default-font "Menlo-12")
-  (exec-path-from-shell-initialize)
-  )
+(setq mouse-wheel-scroll-amount '(1 ((shift) . 1)) ;; one line at a time
+      mouse-wheel-follow-mouse 't) ;; scroll window under mouse
 
+;; multi-term
+(require 'multi-term)
+(global-set-key (kbd "<f2>") 'multi-term)
+;; does this actually work?
+(defadvice term-send-input (after update-cwd)
+  (let* ((pid (process-id (get-buffer-process (current-buffer))))
+	 (cwd (shell-command-to-string
+	       (format "lsof -p %d -Fn | awk 'NR==2{print}' | sed \"s/n\\//\\//\" |  tr -d '\n'" pid))))
+    (cd cwd)))
+(ad-activate 'term-send-input)
+(setq system-uses-terminfo nil)
 
-;; mouse support in terminal
-(unless window-system
-  (require 'mouse)
-  (xterm-mouse-mode t)
-  (global-set-key [mouse-4] '(lambda ()
-                              (interactive)
-                              (scroll-down 1)))
-  (global-set-key [mouse-5] '(lambda ()
-                              (interactive)
-                              (scroll-up 1)))
-  (defun track-mouse (e))
-  (setq mouse-sel-mode t)
-)
+(setq term-bind-key-alist
+      (list (cons "C-c C-c"   'term-interrupt-subjob)
+	    (cons "C-x" 'term-send-raw)
+	    (cons "M-f"       'term-send-forward-word)
+	    (cons "M-b"       'term-send-backward-word)
+	    (cons "C-c C-j"   'term-line-mode)
+	    (cons "C-c C-k"   'term-char-mode)
+	    (cons "M-DEL"     'term-send-backward-kill-word)
+	    (cons "M-d"       'term-send-forward-kill-word)
+	    (cons "<C-left>"  'term-send-backward-word)
+	    (cons "<C-right>" 'term-send-forward-word)
+	    (cons "C-r"       'term-send-reverse-search-history)
+	    (cons "M-p"       'term-send-raw-meta)
+	    (cons "M-y"       'term-send-raw-meta)
+	    (cons "C-y"       'term-send-raw)))
+;; END multi-term
 
-;; (setq linum-format "%3d\u2502 ")
+;; nicer indicator bar (line)
+(require 'powerline)
+(powerline-vim-theme)
+
+;; synchronize with osx copy-buffer
+(defun copy-from-osx ()
+  (shell-command-to-string "pbpaste"))
+(defun paste-to-osx (text &optional push)
+  (let ((process-connection-type nil))
+    (let ((proc (start-process "pbcopy" "*Messages*" "pbcopy")))
+      (process-send-string proc text)
+      (process-send-eof proc))))
+(setq interprogram-cut-function 'paste-to-osx
+      interprogram-paste-function 'copy-from-osx)
+
+;; various small stuff
+(dolist (mode
+         '(ido-mode 
+           ido-everywhere 
+           flx-ido-mode
+	   column-number-mode
+	   electric-pair-mode
+	   show-paren-mode)) 
+  (funcall mode 1))
+
+;; do not look in recent directories
+;(setq ido-auto-merge-work-directories-length -1)
+
+;; automatic brackets 
+(setq show-paren-delay 0)
+
+;; line numbers everywhere
+(global-linum-mode t)
+(setq linum-format "%d ")
+
+;; AC (auto-complete)
 (require 'auto-complete)
 (require 'auto-complete-config)
 (ac-config-default)
-;;(global-auto-complete-mode t)
+;; disable annoying ac-linum bug
+(ac-linum-workaround)
+(setq ac-quick-help-delay 1)
+(setq ac-auto-start 2)
+(setq ac-use-menu-map t)
+;; use at most 100 suggestions
+(setq ac-candidate-limit 50)
+(define-key ac-menu-map "C-n" 'ac-next)
+(define-key ac-menu-map "C-p" 'ac-previous)
+(global-auto-complete-mode t)
 
-(define-key ac-complete-mode-map "\C-n" 'ac-next)
-(define-key ac-complete-mode-map "\C-p" 'ac-previous)
-;; (setq ac-auto-start 3)
-(setq ac-auto-start nil)
+;; END AC
 
-(require 'auto-complete-config)
+;; yasnippet
+(require 'yasnippet)
 
-(require 'ac-math)
-(add-to-list 'ac-modes 'LaTeX-mode)   ; make auto-complete aware of `latex-mode`
-(defun ac-latex-mode-setup ()         ; add ac-sources to default ac-sources
-  (auto-complete-mode t)
-  (setq ac-sources (append '(ac-source-math-unicode 
-			     ac-source-math-latex 
-			     ac-source-latex-commands) ac-sources))
-  )
-(add-hook 'LaTeX-mode-hook 'ac-latex-mode-setup)
+;; global compilation
+(global-set-key (kbd "s-b") 'compile)
+(setq compilation-read-command nil)
 
-
-
-;; tex support 
-(setq TeX-auto-save t)
-(setq TeX-parse-self t)
-(setq TeX-save-query nil)
-(setq TeX-PDF-mode t)
-;;(require 'latex-pretty-symbols)
-(setq TeX-electric-sub-and-superscript t)
-;; dirty hack to scroll pages 
-(fset 'doc-prev "\C-xo\C-x[\C-xo")
-(fset 'doc-next "\C-xo\C-x]\C-xo")
-(global-set-key (kbd "M-[") 'doc-prev)
-(global-set-key (kbd "M-]") 'doc-next)
-
-(setq load-path (cons (expand-file-name "~/.emacs.d/elpa/cmake-mode-20110824") load-path))
-(require 'cmake-mode)
-(setq auto-mode-alist
-      (append '(("CMakeLists\\.txt\\'" . cmake-mode)
-                ("\\.cmake\\'" . cmake-mode))
-              auto-mode-alist))
-
-(setq column-number-mode t)
-(ido-mode t)
-(fset 'yes-or-no-p 'y-or-n-p)
-
-;; decent scrolling
-(setq scroll-step            1
-      scroll-conservatively  10000)
-
-;; copying to x
-(setq x-select-enable-clipboard t)
-
-;; make use of bash completion
-(require 'bash-completion)
-(bash-completion-setup)
-
-;; python
-(require 'python-mode)
-(add-to-list 'auto-mode-alist '("\\.py\\'" . python-mode))
-(add-hook 'python-mode-hook (lambda () (linum-mode t)))
-
-(require 'autopair)
-
-;; linum mode
-;; enable/disable
-(global-set-key (kbd "<f6>") 'linum-mode)
 
 ;; C++
-(require 'auto-complete-clang-async)
+;; (require 'cpputils-cmake)
+(setenv "LD_LIBRARY_PATH"
+	"/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/")
 
-(defun my-c-mode-common-hook ()
-  (flymake-mode t)
-  (linum-mode t)
-  (cppcm-reload-all)
-  (setq ac-sources '(ac-source-clang-async))
-  (ac-clang-launch-completion-process)
-  (setq c-basic-offset 4)
-  (c-set-offset 'substatement-open 0)
-)
-(add-hook 'c-mode-common-hook 'my-c-mode-common-hook)
+
+(require 'ac-helm)
+
+(eval-after-load "helm-regexp"
+    '(setq helm-source-moccur
+           (helm-make-source "Moccur"
+               'helm-source-multi-occur :follow 0)))
+
+(defun my-helm-multi-occur ()
+  "multi-occur in all buffers backed by files."
+  (interactive)
+  (helm-multi-occur
+   (delq nil
+         (mapcar (lambda (b)
+                   (when (buffer-file-name b) (buffer-name b)))
+                 (buffer-list)))))
+
+
+
 (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
-(add-to-list 'auto-mode-alist '("\\.c\\'" . c++-mode))
+
+(defun my:c-mode-hook ()
+  (linum-mode t)
+
+  ;; flycheck: on-the-fly syntax checking
+  (require 'flycheck)
+  (flycheck-mode t)
+  (setq flycheck-clang-language-standard "c++11")  
+  
+  ;; clang-based code completion (doesn't work very well yet)  
+  ;; (require 'irony)
+  ;; (require 'ac-irony)
+  ;; (irony-mode t)
+  ;; (add-to-list 'ac-sources 'ac-source-irony)
+  ;; (define-key irony-mode-map (kbd "M-RET") 'ac-complete-irony-async)
+
+  ;; projectile
+  (projectile-mode t)
+
+  (setq c-default-style "ellemtel")
+  (setq-default c-basic-offset 2)
+  ;; show fill column
+  (fci-mode t)
+  (setq fci-rule-column 100)
+  ;; snippets
+  (yas-minor-mode t)
+  ;; no offset for new string
+  (c-set-offset 'substatement-open 0)
+  ;; .h considered as
+
+  ;; custom compile command
+  (setq compile-command '"cd build ; cmake ../ -G Ninja; ninja ")
+  ;; function arguments hints (+moo-complete)
+  (require 'function-args)  
+  (fa-config-default)
+  ;; semantic for better completion (NOTE: too slow to use with ac-mode)
+  (semantic-mode t)
+  (semantic-add-system-include "/usr/local/include")
+  (semantic-add-system-include "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/")  
+
+  ;;  (add-to-list 'ac-sources 'ac-source-semantic)
+  ;; headers completion
+  (require 'auto-complete-c-headers)
+  (add-to-list 'ac-sources 'ac-source-c-headers)
+  ;; TODO: this is only working for OSX
+  (add-to-list 'achead:include-directories
+	       '"/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1/")
+
+  (local-set-key (kbd "C-c C-o") 'ff-find-other-file)
+  (local-set-key (kbd "C-c C-j") 'semantic-ia-fast-jump)
+  (local-set-key (kbd "C-c C-h") 'helm-occur)
+  (local-set-key (kbd "C-c C-f") 'my-helm-multi-occur)
+  (setq find-file-wildcards 0)
+  )
 
 
+(add-hook 'c-mode-common-hook 'my:c-mode-hook)
+(add-hook 'c++-mode-hook 'my:c-mode-hook)
 
-;; switch between headers
-(global-set-key (kbd "<f4>") 'ff-find-other-file)
+;; this fixes enum class indents
+(defun inside-class-enum-p (pos)
+  "Checks if POS is within the braces of a C++ \"enum class\"."
+  (ignore-errors
+    (save-excursion
+      (goto-char pos)
+      (up-list -1)
+      (backward-sexp 1)
+      (looking-back "enum[ \t]+class[ \t]+[^}]+"))))
 
+(defun align-enum-class (langelem)
+  (if (inside-class-enum-p (c-langelem-pos langelem))
+      0
+    (c-lineup-topmost-intro-cont langelem)))
 
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(custom-safe-themes (quote ("d677ef584c6dfc0697901a44b885cc18e206f05114c8a3b7fde674fce6180879" "e16a771a13a202ee6e276d06098bc77f008b73bbac4d526f160faa2d76c1dd0e" "8aebf25556399b58091e533e455dd50a6a9cba958cc4ebb0aab175863c25b9a4" default))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
+(defun align-enum-class-closing-brace (langelem)
+  (if (inside-class-enum-p (c-langelem-pos langelem))
+      '-
+    '+))
 
+(defun fix-enum-class ()
+  "Setup `c++-mode' to better handle \"class enum\"."
+  (add-to-list 'c-offsets-alist '(topmost-intro-cont . align-enum-class))
+  (add-to-list 'c-offsets-alist
+               '(statement-cont . align-enum-class-closing-brace)))
 
+(add-hook 'c++-mode-hook 'fix-enum-class)
 
+;; END C++
 
+;; theme and windowing
+(when (window-system)
+  (global-set-key (kbd "<s-escape>") 'toggle-frame-fullscreen)
+  (scroll-bar-mode -1)
+  (set-default-font "Menlo-12")
+  (exec-path-from-shell-initialize)
+  (setq x-select-enable-clipboard t)
+  (setq linum-format "%d")
+  )
+(load-theme 'solarized-dark t)
