@@ -11,19 +11,22 @@
 
 ;; helm config
 (global-set-key (kbd "C-x C-f") 'helm-find-files)
-(global-set-key (kbd "C-x b") 'helm-buffers-list)
-(global-set-key (kbd "C-x C-b") 'helm-buffers-list)
+(global-set-key (kbd "C-x b") 'helm-mini)
+(global-set-key (kbd "C-x C-b") 'helm-mini)
+(global-set-key (kbd "M-y") 'helm-show-kill-ring)
 
 (require 'helm-config)
-(helm-mode t)
-(helm-adaptative-mode t)
-(helm-autoresize-mode t)
 (setq helm-autoresize-max-height 30)
 (setq helm-autoresize-min-height 30)
-
+(helm-mode t)
+(define-key helm-map (kbd "<tab>") 'helm-execute-persistent-action)
 
 
 ;; ui
+
+;; by default 
+(setq-default fill-column 100)
+;; ain't noone got time for that
 (menu-bar-mode -1)
 (tool-bar-mode -1)
 (setq inhibit-startup-message t
@@ -36,10 +39,10 @@
 (setq mouse-wheel-scroll-amount '(1 ((shift) . 1)) ;; one line at a time
       mouse-wheel-follow-mouse 't) ;; scroll window under mouse
 
-;; multi-term
+;; multi-term is awesome
 (require 'multi-term)
 (global-set-key (kbd "<f2>") 'multi-term)
-;; does this actually work?
+;; it meant for emacs to follow current terminal path. but does this actually work?
 (defadvice term-send-input (after update-cwd)
   (let* ((pid (process-id (get-buffer-process (current-buffer))))
 	 (cwd (shell-command-to-string
@@ -48,6 +51,7 @@
 (ad-activate 'term-send-input)
 (setq system-uses-terminfo nil)
 
+;; making shorcuts work in the terminal
 (setq term-bind-key-alist
       (list (cons "C-c C-c"   'term-interrupt-subjob)
 	    (cons "C-x" 'term-send-raw)
@@ -87,10 +91,13 @@
 	   show-paren-mode)) 
   (funcall mode 1))
 
-;; do not look in recent directories
-;(setq ido-auto-merge-work-directories-length -1)
-
-;; automatic brackets 
+;; auto brackets
+(electric-pair-mode t)
+(setq electric-pair-pairs '(
+                            (?\" . ?\")
+                            (?\{ . ?\})
+                            ) )
+;; show brackets straight away
 (setq show-paren-delay 0)
 
 ;; line numbers everywhere
@@ -104,25 +111,23 @@
 ;; disable annoying ac-linum bug
 (ac-linum-workaround)
 (setq ac-quick-help-delay 1)
-(setq ac-auto-start 2)
+(setq ac-auto-start 1)
 (setq ac-use-menu-map t)
 ;; use at most 100 suggestions
 (setq ac-candidate-limit 50)
 (define-key ac-menu-map "C-n" 'ac-next)
 (define-key ac-menu-map "C-p" 'ac-previous)
 (global-auto-complete-mode t)
-
 ;; END AC
 
 ;; yasnippet
-(require 'yasnippet)
+;(require 'yasnippet)
 
 ;; global compilation
 (global-set-key (kbd "s-b") 'compile)
 (setq compilation-read-command nil)
 
-
-;; C++
+;; C++ stuff
 ;; (require 'cpputils-cmake)
 (setenv "LD_LIBRARY_PATH"
 	"/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/")
@@ -133,7 +138,7 @@
 (eval-after-load "helm-regexp"
     '(setq helm-source-moccur
            (helm-make-source "Moccur"
-               'helm-source-multi-occur :follow 0)))
+               'helm-source-multi-occur :follow 1)))
 
 (defun my-helm-multi-occur ()
   "multi-occur in all buffers backed by files."
@@ -143,8 +148,6 @@
          (mapcar (lambda (b)
                    (when (buffer-file-name b) (buffer-name b)))
                  (buffer-list)))))
-
-
 
 (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
 
@@ -162,6 +165,7 @@
   ;; (irony-mode t)
   ;; (add-to-list 'ac-sources 'ac-source-irony)
   ;; (define-key irony-mode-map (kbd "M-RET") 'ac-complete-irony-async)
+  
 
   (setq c-default-style "ellemtel")
   (setq-default c-basic-offset 2)
@@ -169,10 +173,9 @@
   (fci-mode t)
   (setq fci-rule-column 100)
   ;; snippets
-  (yas-minor-mode t)
+  ;(yas-global-mode t)
   ;; no offset for new string
   (c-set-offset 'substatement-open 0)
-  ;; .h considered as
 
   ;; custom compile command
   (setq compile-command '"cd build ; cmake ../ -G Ninja; ninja ")
@@ -231,9 +234,14 @@
 
 (add-hook 'c++-mode-hook 'fix-enum-class)
 
-;; END C++
+;; END C++ stuff
 
-;; theme and windowing
+
+;; LaTeX stuff
+(add-hook 'LaTeX-mode-hook '(flyspell-mode t))
+;; END LaTeX stuff
+
+;; X-only stuff
 (when (window-system)
   (global-set-key (kbd "<s-escape>") 'toggle-frame-fullscreen)
   (scroll-bar-mode -1)
@@ -243,3 +251,5 @@
   (setq linum-format "%d")
   )
 (load-theme 'solarized-dark t)
+(put 'upcase-region 'disabled nil)
+(put 'downcase-region 'disabled nil)
