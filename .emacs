@@ -1,7 +1,7 @@
 (require 'package)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/"))
 (package-initialize)
-
+(add-to-list 'load-path "~/.emacs.d/custom/blacken")
 
 ;; for mac
 (when (eq system-type 'darwin)
@@ -56,18 +56,23 @@ Don't mess with special buffers."
  whitespace-style       '(face lines-tail))
 
 ;; we like projectile
+(setq projectile-keymap-prefix (kbd "C-c p"))
+(require 'projectile)
 (helm-projectile-on)
 (projectile-mode t)
 (setq projectile-globally-ignored-file-suffixes
       '(".jpg" ".png" ".gif" ".pdf"  ".aux" ".log" ".DS_Store" ".svn-base" "#" "~" ".aux~" ".bbl"))
-(setq projectile-keymap-prefix (kbd "C-c p"))
-
 
 ;; We like shorter shorcuts
 ;; (global-set-key (kbd "C-^") 'enlarge-window)
 ;; (global-set-key (kbd "M-[") 'shrink-window-horizontally)
 ;; (global-set-key (kbd "M-]") 'enlarge-window-horizontally)
+
+;; python
+(require 'anaconda-mode)
 (add-hook 'python-mode-hook 'anaconda-mode)
+(add-hook 'python-mode-hook 'anaconda-eldoc-mode)
+(require 'blacken)
 (add-hook 'python-mode-hook 'blacken-mode)
 
 
@@ -77,6 +82,13 @@ Don't mess with special buffers."
 			     (flyspell-mode t)
 			     (wc-mode t)
 			     (auto-fill-mode t)))
+
+
+(require 'ansi-color)
+(defun my/ansi-colorize-buffer ()
+  (let ((buffer-read-only nil))
+    (ansi-color-apply-on-region (point-min) (point-max))))
+(add-hook 'compilation-filter-hook 'my/ansi-colorize-buffer)
 
 ;; bugfix for emacs
 (with-eval-after-load 'python
@@ -88,6 +100,33 @@ Don't mess with special buffers."
       (python-shell-completion-native-get-completions
        (get-buffer-process (current-buffer))
        nil "_"))))
+
+
+;; { c++
+(require 'clang-format)
+;; (global-set-key (kbd "C-c i") 'clang-format-region)
+;; (global-set-key (kbd "C-c u") 'clang-format-buffer)
+
+;; (defun clang-format-buffer-smart-on-save ()
+;;   "Add auto-save hook for clang-format-buffer-smart."
+;;   (add-hook 'before-save-hook 'clang-format-buffer-smart nil t))
+
+;; (add-hook 'c++-mode-hook 'clang-format-buffer-smart-on-save)
+;; (add-hook 'c-mode-hook 'clang-format-buffer-smart-on-save)
+
+;; (setq clang-format-style-option "google")
+
+(add-hook 'c-mode-common-hook 'google-set-c-style)
+(add-hook 'c-mode-common-hook 'google-make-newline-indent)
+(add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
+
+(setq mac-command-modifier 'super)
+(add-hook 'c-mode-common-hook
+          (lambda () (define-key c-mode-base-map (kbd "C-c C-b") 'recompile)))
+
+;; }
+
+
 
 (defun run-latexmk ()
   (interactive)
@@ -103,10 +142,18 @@ Don't mess with special buffers."
       (minibuffer-message "latexmk done"))))
 
 (custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (blacken yaml-mode  helm-pydoc anaconda-mode helm-ag zenburn-theme helm-projectile helm))))
+    (google-c-style clang-format blacken yaml-mode helm-pydoc anaconda-mode helm-ag zenburn-theme helm-projectile helm))))
 (custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
  )
 
 (put 'set-goal-column 'disabled nil)
