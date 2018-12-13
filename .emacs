@@ -68,6 +68,17 @@ Don't mess with special buffers."
 ;; (global-set-key (kbd "M-[") 'shrink-window-horizontally)
 ;; (global-set-key (kbd "M-]") 'enlarge-window-horizontally)
 
+(add-hook 'prog-mode-hook 'flycheck-mode)
+(add-hook 'prog-mode-hook 'show-paren-mode)
+(add-hook 'prog-mode-hook 'whitespace-mode)
+
+(setq-default
+ whitespace-line-column 88
+ whitespace-style       '(face lines-tail))
+
+(setq-default show-trailing-whitespace t)
+
+
 ;; python
 (require 'anaconda-mode)
 (add-hook 'python-mode-hook 'anaconda-mode)
@@ -75,6 +86,11 @@ Don't mess with special buffers."
 (require 'blacken)
 (add-hook 'python-mode-hook 'blacken-mode)
 
+
+(require 'flycheck)
+(eval-after-load 'flycheck
+  '(define-key flycheck-mode-map (kbd "C-c ! h") 'helm-flycheck)
+  )
 
 (setq helm-ag-base-command "ag --nogroup --nocolor --vimgrep")
 ;; we want flyspell
@@ -119,6 +135,7 @@ Don't mess with special buffers."
 (add-hook 'c-mode-common-hook 'google-set-c-style)
 (add-hook 'c-mode-common-hook 'google-make-newline-indent)
 (add-to-list 'auto-mode-alist '("\\.h\\'" . c++-mode))
+(add-hook 'c++-mode-hook (lambda () (setq flycheck-gcc-language-standard "c++11")))
 
 (setq mac-command-modifier 'super)
 (add-hook 'c-mode-common-hook
@@ -148,7 +165,7 @@ Don't mess with special buffers."
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (google-c-style clang-format blacken yaml-mode helm-pydoc anaconda-mode helm-ag zenburn-theme helm-projectile helm))))
+    (markdown-mode google-c-style clang-format blacken yaml-mode helm-pydoc anaconda-mode helm-ag zenburn-theme helm-projectile helm))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -157,3 +174,5 @@ Don't mess with special buffers."
  )
 
 (put 'set-goal-column 'disabled nil)
+
+;;; .emacs ends here
