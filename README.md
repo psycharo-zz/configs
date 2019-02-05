@@ -1,4 +1,4 @@
 configs
 =======
-
-configuration for emacs etc
+configuration for emacs and fish
+bash start.sh
