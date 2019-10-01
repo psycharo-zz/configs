@@ -16,6 +16,8 @@
   (blink-cursor-mode 0)
   )
 
+(global-set-key (kbd "s-l") 'goto-line)
+
 ;; we like killing other buffers
 (defun kill-other-buffers ()
   "Kill all buffers but the current one.
@@ -33,7 +35,7 @@ Don't mess with special buffers."
 (setq inhibit-startup-screen t)
 
 ;; we like zenburn
-(load-theme 'zenburn t)
+;; (load-theme 'zenburn t)
 ;; we like helm
 (require 'helm)
 (require 'helm-config)
@@ -60,6 +62,9 @@ Don't mess with special buffers."
 (require 'projectile)
 (helm-projectile-on)
 (projectile-mode t)
+(setq projectile-indexing-method 'alien)
+(setq projectile-sort-order 'recentf)
+
 (setq projectile-globally-ignored-file-suffixes
       '(".jpg" ".png" ".gif" ".pdf"  ".aux" ".log" ".DS_Store" ".svn-base" "#" "~" ".aux~" ".bbl"))
 
@@ -72,8 +77,9 @@ Don't mess with special buffers."
 (add-hook 'prog-mode-hook 'show-paren-mode)
 (add-hook 'prog-mode-hook 'whitespace-mode)
 
+
 (setq-default
- whitespace-line-column 88
+ whitespace-line-column 100
  whitespace-style       '(face lines-tail))
 
 (setq-default show-trailing-whitespace t)
@@ -85,6 +91,9 @@ Don't mess with special buffers."
 (add-hook 'python-mode-hook 'anaconda-eldoc-mode)
 (require 'blacken)
 (add-hook 'python-mode-hook 'blacken-mode)
+
+(add-hook 'python-mode-hook
+          (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace)))
 
 
 (require 'flycheck)
@@ -165,7 +174,7 @@ Don't mess with special buffers."
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (markdown-mode google-c-style clang-format blacken yaml-mode helm-pydoc anaconda-mode helm-ag zenburn-theme helm-projectile helm))))
+    (dockerfile-mode magit markdown-mode google-c-style clang-format blacken yaml-mode helm-pydoc anaconda-mode helm-ag zenburn-theme helm-projectile helm))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

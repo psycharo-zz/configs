@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-cp .emacs $HOME/.emacs
-cp .gitconfig $HOME/.gitconfig
+cp dotemacs $HOME/.emacs
+cp dotgitconfig $HOME/.gitconfig
 cp config.fish $HOME/.config/fish/config.fish
-emacs --daemon
+cp flake8 $HOME/.config/flake8
 
 
